@@ -44,6 +44,11 @@ app.use('/api', userRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Health check (for Render and uptime monitors)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 // Serve frontend for all non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
@@ -83,8 +88,8 @@ async function startServer() {
     }
   }
 
-  app.listen(PORT, () => {
-    console.log(`🚀 AI Grievance Portal server running on http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 AI Grievance Portal server running on port ${PORT}`);
     console.log(`📊 Frontend: http://localhost:${PORT}`);
     console.log(`📡 API Base: http://localhost:${PORT}/api`);
   });
