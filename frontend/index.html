@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Grievance Portal - Voice Your Complaints, Get Them Solved!</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo" onclick="navigate('home')">
+        <i class="fas fa-balance-scale"></i>
+        <span>AI Grievance Portal</span>
+      </a>
+      <div class="nav-menu" id="nav-menu">
+        <a href="#" class="nav-link active" onclick="navigate('home')" data-page="home">
+          <i class="fas fa-home"></i> Home
+        </a>
+        <a href="#" class="nav-link" onclick="navigate('submit')" data-page="submit">
+          <i class="fas fa-plus-circle"></i> Submit Complaint
+        </a>
+        <a href="#" class="nav-link" onclick="navigate('dashboard')" data-page="dashboard">
+          <i class="fas fa-chart-bar"></i> Dashboard
+        </a>
+        <a href="#" class="nav-link" onclick="navigate('admin')" data-page="admin">
+          <i class="fas fa-shield-alt"></i> Admin
+        </a>
+        <div class="nav-auth" id="nav-auth">
+          <button class="btn btn-outline" onclick="showAuthModal('login')">Login</button>
+          <button class="btn btn-primary" onclick="showAuthModal('register')">Register</button>
+        </div>
+        <div class="nav-user hidden" id="nav-user">
+          <div class="user-badge">
+            <i class="fas fa-coins"></i>
+            <span id="nav-points">0</span> pts
+          </div>
+          <div class="user-avatar" onclick="toggleUserMenu()">
+            <i class="fas fa-user-circle"></i>
+            <span id="nav-username">User</span>
+          </div>
+          <div class="user-dropdown hidden" id="user-dropdown">
+            <a onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> My Dashboard</a>
+            <a onclick="showNotifications()"><i class="fas fa-bell"></i> Notifications</a>
+            <a onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+      <button class="nav-toggle" id="nav-toggle" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay hidden" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchAuthTab('login')" id="tab-login">Login</button>
+        <button class="modal-tab" onclick="switchAuthTab('register')" id="tab-register">Register</button>
+      </div>
+      <!-- Login Form -->
+      <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+        <h2>Welcome Back!</h2>
+        <p class="form-subtitle">Login to track your complaints</p>
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="login-email" required placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <input type="password" id="login-password" required placeholder="Enter your password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+        <div class="demo-accounts">
+          <p>Demo accounts:</p>
+          <button type="button" class="btn btn-sm" onclick="fillDemo('citizen')">Citizen Demo</button>
+          <button type="button" class="btn btn-sm" onclick="fillDemo('admin')">Admin Demo</button>
+        </div>
+      </form>
+      <!-- Register Form -->
+      <form class="auth-form hidden" id="register-form" onsubmit="handleRegister(event)">
+        <h2>Create Account</h2>
+        <p class="form-subtitle">Join the civic movement</p>
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Full Name</label>
+          <input type="text" id="register-name" required placeholder="Enter your full name">
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="register-email" required placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-phone"></i> Phone</label>
+          <input type="tel" id="register-phone" placeholder="Enter your phone number">
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <input type="password" id="register-password" required placeholder="Create a password" minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">
+          <i class="fas fa-user-plus"></i> Register
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Panel -->
+  <div class="notification-panel hidden" id="notification-panel">
+    <div class="notification-header">
+      <h3><i class="fas fa-bell"></i> Notifications</h3>
+      <button onclick="closeNotifications()">&times;</button>
+    </div>
+    <div class="notification-list" id="notification-list">
+      <p class="notification-empty">No notifications yet</p>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: HOME ============ -->
+  <main id="page-home" class="page active">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+      <div class="hero-container">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <i class="fas fa-robot"></i> AI-Powered Civic Portal
+          </div>
+          <h1 class="hero-title">
+            Voice Your Complaints,<br>
+            <span class="gradient-text">Get Them Solved!</span>
+          </h1>
+          <p class="hero-subtitle">
+            Submit civic complaints and let our AI automatically route them to the right government department. 
+            Track progress in real-time with color-coded priorities and earn rewards for civic participation.
+          </p>
+          <div class="hero-buttons">
+            <button class="btn btn-primary btn-lg" onclick="navigate('submit')">
+              <i class="fas fa-paper-plane"></i> Submit Complaint
+            </button>
+            <button class="btn btn-outline btn-lg" onclick="navigate('dashboard')">
+              <i class="fas fa-chart-line"></i> View Dashboard
+            </button>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <span class="hero-stat-number" id="stat-total">0</span>
+              <span class="hero-stat-label">Complaints Filed</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-number" id="stat-resolved">0</span>
+              <span class="hero-stat-label">Issues Resolved</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-number" id="stat-departments">8</span>
+              <span class="hero-stat-label">Departments</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-illustration">
+            <div class="floating-card card-1">
+              <i class="fas fa-check-circle" style="color: #22c55e;"></i>
+              <span>Complaint Resolved!</span>
+            </div>
+            <div class="floating-card card-2">
+              <i class="fas fa-robot" style="color: #6366f1;"></i>
+              <span>AI Categorizing...</span>
+            </div>
+            <div class="floating-card card-3">
+              <i class="fas fa-building" style="color: #f59e0b;"></i>
+              <span>Routed to Dept.</span>
+            </div>
+            <div class="center-icon">
+              <i class="fas fa-city"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section how-it-works">
+      <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Our AI-powered platform makes civic engagement easy and effective</p>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <div class="step-icon"><i class="fas fa-edit"></i></div>
+            <h3>Submit Complaint</h3>
+            <p>Describe your civic issue with location details and optional media uploads</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-icon"><i class="fas fa-brain"></i></div>
+            <h3>AI Analysis</h3>
+            <p>Our NLP engine categorizes, prioritizes, and detects duplicate complaints</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <div class="step-icon"><i class="fas fa-route"></i></div>
+            <h3>Auto Routing</h3>
+            <p>Complaint is automatically routed to the correct government department</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">4</div>
+            <div class="step-icon"><i class="fas fa-tasks"></i></div>
+            <h3>Track & Resolve</h3>
+            <p>Monitor progress with color-coded status and earn reward points</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Departments -->
+    <section class="section departments-section">
+      <div class="container">
+        <h2 class="section-title">Departments We Cover</h2>
+        <p class="section-subtitle">AI routes your complaints to the right department automatically</p>
+        <div class="dept-grid">
+          <div class="dept-card"><div class="dept-icon">🗑️</div><h4>Sanitation</h4><p>Garbage, waste, cleaning</p></div>
+          <div class="dept-card"><div class="dept-icon">💧</div><h4>Water</h4><p>Leakage, supply, pipes</p></div>
+          <div class="dept-card"><div class="dept-icon">💡</div><h4>Electrical</h4><p>Street lights, power</p></div>
+          <div class="dept-card"><div class="dept-icon">🛣️</div><h4>Public Works</h4><p>Roads, potholes, bridges</p></div>
+          <div class="dept-card"><div class="dept-icon">🚦</div><h4>Traffic</h4><p>Signals, parking, transport</p></div>
+          <div class="dept-card"><div class="dept-icon">🏥</div><h4>Health</h4><p>Hospitals, diseases, pests</p></div>
+          <div class="dept-card"><div class="dept-icon">🌳</div><h4>Parks</h4><p>Gardens, playgrounds</p></div>
+          <div class="dept-card"><div class="dept-icon">🏗️</div><h4>Housing</h4><p>Construction, permits</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Priority System -->
+    <section class="section priority-section">
+      <div class="container">
+        <h2 class="section-title">Color-Coded Priority System</h2>
+        <p class="section-subtitle">Every complaint is assigned a priority level by our AI</p>
+        <div class="priority-grid">
+          <div class="priority-card priority-red">
+            <div class="priority-indicator"></div>
+            <h3>🔴 High Priority</h3>
+            <p>Urgent issues that pose danger or require immediate attention</p>
+            <span class="priority-tag">Dangerous · Emergency · Hazard</span>
+          </div>
+          <div class="priority-card priority-yellow">
+            <div class="priority-indicator"></div>
+            <h3>🟡 Medium Priority</h3>
+            <p>Important issues that need resolution within standard timeline</p>
+            <span class="priority-tag">Normal · Standard · Important</span>
+          </div>
+          <div class="priority-card priority-green">
+            <div class="priority-indicator"></div>
+            <h3>🟢 Resolved</h3>
+            <p>Issues that have been successfully addressed and closed</p>
+            <span class="priority-tag">Solved · Closed · Complete</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Public Transparency / Live Analytics -->
+    <section class="section analytics-section">
+      <div class="container">
+        <h2 class="section-title">Public Transparency Dashboard</h2>
+        <p class="section-subtitle">Real-time analytics for civic accountability</p>
+        <div class="analytics-grid">
+          <div class="analytics-card">
+            <h4><i class="fas fa-chart-pie"></i> Complaints by Department</h4>
+            <canvas id="chart-department"></canvas>
+          </div>
+          <div class="analytics-card">
+            <h4><i class="fas fa-chart-bar"></i> Complaints by Status</h4>
+            <canvas id="chart-status"></canvas>
+          </div>
+          <div class="analytics-card">
+            <h4><i class="fas fa-chart-line"></i> Resolution Trend</h4>
+            <canvas id="chart-trend"></canvas>
+          </div>
+          <div class="analytics-card analytics-stats">
+            <h4><i class="fas fa-tachometer-alt"></i> Quick Stats</h4>
+            <div class="quick-stat">
+              <div class="quick-stat-value" id="qs-total">0</div>
+              <div class="quick-stat-label">Total Complaints</div>
+            </div>
+            <div class="quick-stat">
+              <div class="quick-stat-value" id="qs-resolved">0</div>
+              <div class="quick-stat-label">Resolved</div>
+            </div>
+            <div class="quick-stat">
+              <div class="quick-stat-value" id="qs-rate">0%</div>
+              <div class="quick-stat-label">Resolution Rate</div>
+            </div>
+            <div class="quick-stat">
+              <div class="quick-stat-value" id="qs-urgent">0</div>
+              <div class="quick-stat-label">High Priority</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent Public Complaints -->
+    <section class="section recent-section">
+      <div class="container">
+        <h2 class="section-title">Recent Public Complaints</h2>
+        <p class="section-subtitle">Latest civic issues reported by citizens</p>
+        <div class="complaints-grid" id="public-complaints"></div>
+      </div>
+    </section>
+
+    <!-- Gamification -->
+    <section class="section gamification-section">
+      <div class="container">
+        <h2 class="section-title">Earn Rewards for Civic Participation</h2>
+        <p class="section-subtitle">Get points and badges for being an active citizen</p>
+        <div class="reward-grid">
+          <div class="reward-card">
+            <div class="reward-icon">📝</div>
+            <h4>+10 Points</h4>
+            <p>Submit a Complaint</p>
+          </div>
+          <div class="reward-card">
+            <div class="reward-icon">✅</div>
+            <h4>+5 Points</h4>
+            <p>Complaint Resolved</p>
+          </div>
+          <div class="reward-card">
+            <div class="reward-icon">👍</div>
+            <h4>+2 Points</h4>
+            <p>Upvote a Complaint</p>
+          </div>
+          <div class="reward-card">
+            <div class="reward-icon">🌟</div>
+            <h4>New Citizen</h4>
+            <p>Join the portal</p>
+          </div>
+          <div class="reward-card">
+            <div class="reward-icon">🏆</div>
+            <h4>Active Citizen</h4>
+            <p>Submit 5 complaints</p>
+          </div>
+          <div class="reward-card">
+            <div class="reward-icon">👑</div>
+            <h4>Civic Champion</h4>
+            <p>Submit 10 complaints</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-col">
+            <h4><i class="fas fa-balance-scale"></i> AI Grievance Portal</h4>
+            <p>AI-powered civic complaint management system for transparent and efficient governance.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Quick Links</h4>
+            <a href="#" onclick="navigate('home')">Home</a>
+            <a href="#" onclick="navigate('submit')">Submit Complaint</a>
+            <a href="#" onclick="navigate('dashboard')">Dashboard</a>
+          </div>
+          <div class="footer-col">
+            <h4>Departments</h4>
+            <a href="#">Sanitation</a>
+            <a href="#">Water Supply</a>
+            <a href="#">Electrical</a>
+            <a href="#">Public Works</a>
+          </div>
+          <div class="footer-col">
+            <h4>Contact</h4>
+            <p><i class="fas fa-envelope"></i> support@grievance.gov</p>
+            <p><i class="fas fa-phone"></i> 1800-GRIEVANCE</p>
+            <p><i class="fas fa-map-marker-alt"></i> Smart City HQ</p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2026 AI Grievance Portal. Built for Hackathon.</p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ============ PAGE: SUBMIT COMPLAINT ============ -->
+  <main id="page-submit" class="page">
+    <section class="section submit-section">
+      <div class="container">
+        <div class="submit-wrapper">
+          <div class="submit-form-container">
+            <h2><i class="fas fa-edit"></i> Submit a Complaint</h2>
+            <p class="form-subtitle">Describe your civic issue and our AI will route it to the right department</p>
+            
+            <form id="complaint-form" onsubmit="handleComplaintSubmit(event)">
+              <div class="form-group">
+                <label><i class="fas fa-comment-alt"></i> Complaint Description *</label>
+                <textarea id="complaint-text" rows="5" required 
+                  placeholder="Describe the issue in detail (e.g., 'Garbage not collected from MG Road for 3 days, causing bad smell and health hazard')"></textarea>
+                <div class="ai-preview" id="ai-preview">
+                  <div class="ai-preview-label"><i class="fas fa-robot"></i> AI Preview</div>
+                  <div class="ai-preview-dept" id="ai-preview-dept">Start typing to see AI department detection...</div>
+                  <div class="ai-preview-priority" id="ai-preview-priority"></div>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label><i class="fas fa-map-marker-alt"></i> Location *</label>
+                  <input type="text" id="complaint-location" required 
+                    placeholder="e.g., MG Road, Sector 15, Bangalore">
+                </div>
+                <div class="form-group">
+                  <label><i class="fas fa-language"></i> Language</label>
+                  <select id="complaint-language">
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Tamil">Tamil</option>
+                    <option value="Telugu">Telugu</option>
+                    <option value="Kannada">Kannada</option>
+                    <option value="Malayalam">Malayalam</option>
+                    <option value="Bengali">Bengali</option>
+                    <option value="Marathi">Marathi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label><i class="fas fa-camera"></i> Upload Image/Video (Optional)</label>
+                <div class="file-upload" id="file-upload">
+                  <input type="file" id="complaint-file" accept="image/*,video/*" onchange="handleFileSelect(event)">
+                  <div class="file-upload-content">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag & drop or click to upload</p>
+                    <span>Supports: JPG, PNG, MP4 (Max 10MB)</span>
+                  </div>
+                  <div class="file-preview hidden" id="file-preview">
+                    <img id="file-preview-img" alt="preview">
+                    <button type="button" onclick="removeFile()" class="file-remove">&times;</button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg btn-full" id="submit-btn">
+                <i class="fas fa-paper-plane"></i> Submit Complaint
+              </button>
+            </form>
+          </div>
+
+          <!-- AI Result Panel (shown after submission) -->
+          <div class="ai-result-panel hidden" id="ai-result-panel">
+            <div class="ai-result-header">
+              <div class="ai-result-icon"><i class="fas fa-robot"></i></div>
+              <h3>AI Analysis Complete!</h3>
+            </div>
+            <div class="ai-result-body">
+              <div class="ai-result-item">
+                <label>Department Assigned</label>
+                <div class="ai-result-value" id="result-department">-</div>
+              </div>
+              <div class="ai-result-item">
+                <label>Priority Level</label>
+                <div class="ai-result-value" id="result-priority">-</div>
+              </div>
+              <div class="ai-result-item">
+                <label>AI Suggestion</label>
+                <div class="ai-result-value ai-suggestion" id="result-suggestion">-</div>
+              </div>
+              <div class="ai-result-item">
+                <label>Points Earned</label>
+                <div class="ai-result-value points-earned" id="result-points">+10 🎉</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-lg btn-full" onclick="resetSubmitForm()">
+              <i class="fas fa-plus"></i> Submit Another Complaint
+            </button>
+            <button class="btn btn-outline btn-lg btn-full" onclick="navigate('dashboard')" style="margin-top:8px;">
+              <i class="fas fa-chart-bar"></i> View Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ PAGE: CITIZEN DASHBOARD ============ -->
+  <main id="page-dashboard" class="page">
+    <section class="section dashboard-section">
+      <div class="container">
+        <!-- User Profile Card -->
+        <div class="profile-card" id="profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-info">
+              <h2 id="profile-name">Citizen</h2>
+              <p id="profile-email">Login to view your dashboard</p>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="profile-stat-value" id="profile-points">0</div>
+                <div class="profile-stat-label">Points</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-value" id="profile-complaints">0</div>
+                <div class="profile-stat-label">Complaints</div>
+              </div>
+            </div>
+          </div>
+          <div class="profile-badges" id="profile-badges"></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="dashboard-filters">
+          <h3><i class="fas fa-filter"></i> Filter Complaints</h3>
+          <div class="filter-group">
+            <select id="filter-department" onchange="filterComplaints()">
+              <option value="">All Departments</option>
+              <option value="Sanitation Department">Sanitation</option>
+              <option value="Water Department">Water</option>
+              <option value="Electrical Department">Electrical</option>
+              <option value="Public Works Department">Public Works</option>
+              <option value="Traffic & Transport Department">Traffic</option>
+              <option value="Health Department">Health</option>
+              <option value="Parks & Recreation Department">Parks</option>
+              <option value="Housing & Urban Development">Housing</option>
+            </select>
+            <select id="filter-priority" onchange="filterComplaints()">
+              <option value="">All Priorities</option>
+              <option value="red">🔴 High Priority</option>
+              <option value="yellow">🟡 Medium Priority</option>
+              <option value="green">🟢 Resolved</option>
+            </select>
+            <select id="filter-status" onchange="filterComplaints()">
+              <option value="">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Complaints Grid -->
+        <div class="complaints-grid" id="dashboard-complaints">
+          <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No complaints yet</h3>
+            <p>Login and submit your first complaint to see it here</p>
+            <button class="btn btn-primary" onclick="navigate('submit')">Submit Complaint</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ PAGE: ADMIN DASHBOARD ============ -->
+  <main id="page-admin" class="page">
+    <section class="section admin-section">
+      <div class="container">
+        <div class="admin-header">
+          <h2><i class="fas fa-shield-alt"></i> Admin Dashboard</h2>
+          <p>Manage complaints, update statuses, and monitor department performance</p>
+        </div>
+
+        <!-- Admin Stats -->
+        <div class="admin-stats-grid" id="admin-stats">
+          <div class="admin-stat-card stat-total">
+            <div class="admin-stat-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="admin-stat-info">
+              <div class="admin-stat-value" id="admin-total">0</div>
+              <div class="admin-stat-label">Total Complaints</div>
+            </div>
+          </div>
+          <div class="admin-stat-card stat-pending">
+            <div class="admin-stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="admin-stat-info">
+              <div class="admin-stat-value" id="admin-pending">0</div>
+              <div class="admin-stat-label">Pending</div>
+            </div>
+          </div>
+          <div class="admin-stat-card stat-progress">
+            <div class="admin-stat-icon"><i class="fas fa-spinner"></i></div>
+            <div class="admin-stat-info">
+              <div class="admin-stat-value" id="admin-progress">0</div>
+              <div class="admin-stat-label">In Progress</div>
+            </div>
+          </div>
+          <div class="admin-stat-card stat-resolved">
+            <div class="admin-stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="admin-stat-info">
+              <div class="admin-stat-value" id="admin-resolved">0</div>
+              <div class="admin-stat-label">Resolved</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Charts -->
+        <div class="admin-charts-grid">
+          <div class="admin-chart-card">
+            <h4><i class="fas fa-chart-doughnut"></i> Department Load</h4>
+            <canvas id="admin-chart-dept"></canvas>
+          </div>
+          <div class="admin-chart-card">
+            <h4><i class="fas fa-chart-bar"></i> Priority Distribution</h4>
+            <canvas id="admin-chart-priority"></canvas>
+          </div>
+        </div>
+
+        <!-- Admin Filters -->
+        <div class="admin-filters">
+          <h3><i class="fas fa-filter"></i> Manage Complaints</h3>
+          <div class="filter-group">
+            <select id="admin-filter-department" onchange="loadAdminComplaints()">
+              <option value="">All Departments</option>
+              <option value="Sanitation Department">Sanitation</option>
+              <option value="Water Department">Water</option>
+              <option value="Electrical Department">Electrical</option>
+              <option value="Public Works Department">Public Works</option>
+              <option value="Traffic & Transport Department">Traffic</option>
+              <option value="Health Department">Health</option>
+              <option value="Parks & Recreation Department">Parks</option>
+              <option value="Housing & Urban Development">Housing</option>
+            </select>
+            <select id="admin-filter-priority" onchange="loadAdminComplaints()">
+              <option value="">All Priorities</option>
+              <option value="red">🔴 High</option>
+              <option value="yellow">🟡 Medium</option>
+              <option value="green">🟢 Resolved</option>
+            </select>
+            <select id="admin-filter-status" onchange="loadAdminComplaints()">
+              <option value="">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Admin Complaints Table -->
+        <div class="admin-table-container">
+          <table class="admin-table" id="admin-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Complaint</th>
+                <th>Department</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Upvotes</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <tr><td colspan="8" class="empty-cell">Loading complaints...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Status Update Modal -->
+  <div class="modal-overlay hidden" id="status-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeStatusModal()">&times;</button>
+      <h2><i class="fas fa-edit"></i> Update Complaint Status</h2>
+      <input type="hidden" id="status-complaint-id">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="status-select">
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Assign Staff (Optional)</label>
+        <input type="text" id="status-staff" placeholder="Enter staff name">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="updateComplaintStatus()">
+        <i class="fas fa-save"></i> Update Status
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ CHATBOT ============ -->
+  <div class="chatbot-toggle" id="chatbot-toggle" onclick="toggleChatbot()">
+    <i class="fas fa-comments"></i>
+    <span class="chatbot-badge">AI</span>
+  </div>
+  <div class="chatbot-container hidden" id="chatbot-container">
+    <div class="chatbot-header">
+      <div class="chatbot-header-info">
+        <div class="chatbot-avatar"><i class="fas fa-robot"></i></div>
+        <div>
+          <h4>GrievanceBot</h4>
+          <span class="chatbot-status">Online</span>
+        </div>
+      </div>
+      <button onclick="toggleChatbot()" class="chatbot-close">&times;</button>
+    </div>
+    <div class="chatbot-messages" id="chatbot-messages">
+      <div class="chat-message bot">
+        <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+        <div class="chat-bubble">
+          Hello! 👋 I'm GrievanceBot. I can help you with:
+          <ul>
+            <li>How to submit a complaint</li>
+            <li>Check complaint status</li>
+            <li>Department information</li>
+            <li>Reward points system</li>
+          </ul>
+          What would you like to know?
+        </div>
+      </div>
+    </div>
+    <div class="chatbot-suggestions" id="chatbot-suggestions">
+      <button onclick="sendChatMessage('How do I submit a complaint?')">How to submit?</button>
+      <button onclick="sendChatMessage('Which department handles garbage?')">Departments</button>
+      <button onclick="sendChatMessage('How do reward points work?')">Rewards</button>
+      <button onclick="sendChatMessage('What is the priority system?')">Priority info</button>
+    </div>
+    <div class="chatbot-input">
+      <input type="text" id="chatbot-input" placeholder="Type your question..." 
+        onkeypress="if(event.key==='Enter')sendChatFromInput()">
+      <button onclick="sendChatFromInput()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay hidden" id="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>AI is processing your complaint...</p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script src="js/charts.js"></script>
+</body>
+</html>
